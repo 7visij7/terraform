@@ -1,0 +1,15 @@
+---
+- name: Restart openvpn-server 
+  become: yes
+  systemd:
+    name: openvpn-server@server.service
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+
+- name: Check openvpn-server 
+  become: yes
+  systemd:
+    name: openvpn-server@server.service
+    state: started
+    enabled: "yes"

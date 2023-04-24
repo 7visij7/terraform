@@ -1,0 +1,9 @@
+---
+- name: Create config fot client Openvpn
+  hosts: all
+  gather_facts: false
+  become: yes
+
+  roles:
+  - openvpn-client
+

@@ -1,0 +1,16 @@
+---
+- name: Create a directory if it does not exist
+  ansible.builtin.file:
+    path: /etc/openvpn/client/
+    state: directory
+
+- name: Generate config
+  template:
+    src: "{{ item.src }}"
+    dest: "/etc/openvpn/client/{{ item.src }}"
+    backup: yes
+  with_items:
+    - { src: "aws_vpn_android.conf"}
+    - { src: "aws_vpn_iphone.conf"}
+    - { src: "aws_vpn_mac.conf"}
+    - { src: "aws_vpn_ubuntu.conf"}
