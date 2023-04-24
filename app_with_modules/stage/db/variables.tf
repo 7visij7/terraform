@@ -1,0 +1,1 @@
+/Users/eilchenko/github/terraform/Use_Enviroment/stage/variables.tf
