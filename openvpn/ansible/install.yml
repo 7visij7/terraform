@@ -1,0 +1,95 @@
+---
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: Install Openvpn
+      become: yes
+      apt: 
+        name: "{{ packages }}"
+        state: present
+        update_cache: yes
+      vars:
+        packages:
+        - openvpn
+        
+    - name: "Copy config files"
+      become: yes
+      copy:
+        src: "{{ item.src }}"
+        dest: "/etc/openvpn/server/{{ item.src }}"
+        mode: "0644"
+        backup: yes
+      with_items:
+        - { src: "server.conf" }
+        - { src: "ca.crt" }
+        - { src: "dh.pem" }
+        - { src: "ta.key" }
+        - { src: "vpn-server.crt" }
+        - { src: "vpn-server.key" }
+      notify:
+      - Restart openvpn
+
+    - name: Start service openvpn, if not started
+      become: yes
+      ansible.builtin.service:
+        name: openvpn-server
+        state: started
+        enabled: yes
+      notify:
+      - Restart openvpn
+
+    - name: enable IP address masquerade
+      firewalld:
+        masquerade: yes
+        state: enabled
+        permanent: yes
+        immediate: yes
+
+      # - name: clean rules on all chains of nat table
+      #   iptables:
+      #     table: nat
+      #     flush: yes
+  
+      # - name: delete all user-defined chains on nat table
+      #   shell: iptables -t nat -X
+  
+      # - name: masquerade connection
+      #   shell: iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
+
+  handlers:
+    - name: Restart openvpn
+      become: yes
+      systemd:
+        name: openvpn 
+        state: restarted
+        enabled: yes
+        daemon_reload: yes
+
+    - name: Check openvpn
+      become: yes
+      systemd:
+        name: openvpn 
+        state: started
+        enabled: "yes"
+
+- hosts: 127.0.0.1
+  vars:
+     SERVER_IP: "{{ lookup('file', '../terraform/ip.txt') }}"
+  gather_facts: false
+  tasks:
+    - name: Create a directory if it does not exist
+      ansible.builtin.file:
+        path: ../client_configs/
+        state: directory
+
+    - name: Generate config
+      template:
+        src: "{{ item.src }}"
+        dest: "../client_configs/{{ item.src }}"
+        backup: yes
+      with_items:
+        - { src: "aws_vpn_android.conf"}
+        - { src: "aws_vpn_iphone.conf"}
+        - { src: "aws_vpn_mac.conf"}
+        - { src: "aws_vpn_ubuntu.conf"}
+                        

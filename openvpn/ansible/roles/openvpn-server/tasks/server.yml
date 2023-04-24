@@ -1,0 +1,37 @@
+---
+- name: Install Openvpn
+  become: yes
+  apt: 
+    name: "{{ packages }}"
+    state: present
+    update_cache: yes
+  vars:
+    packages:
+    - openvpn
+    
+- name: "Copy config files"
+  become: yes
+  copy:
+    src: "{{ item.src }}"
+    dest: "/etc/openvpn/server/{{ item.src }}"
+    mode: "0644"
+    backup: yes
+  with_items:
+    - { src: "server.conf" }
+    - { src: "ca.crt" }
+    - { src: "dh.pem" }
+    - { src: "ta.key" }
+    - { src: "vpn-server.crt" }
+    - { src: "vpn-server.key" }
+  notify:
+  - Restart openvpn-server 
+
+- name: Start service openvpn, if not started
+  become: yes
+  ansible.builtin.service:
+    name: openvpn-server@server.service
+    state: started
+    enabled: yes
+    force: true
+  notify:
+  - Restart openvpn-server 
